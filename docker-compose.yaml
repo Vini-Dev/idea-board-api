@@ -1,0 +1,34 @@
+version: "3"
+services:
+    mongo:
+        container_name: mongo
+        image: mongo
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+            MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+        ports:
+            - "27017:${DB_PORT}"
+        volumes:
+            - ./mongo:/data/mongo
+        networks:
+            - mongo
+        env_file:
+            - .env
+        restart: always
+    app:
+        container_name: "idea-board-api"
+        build: .
+        command: npm start
+        ports:
+            - "4000:${APP_PORT}"
+        volumes:
+            - .:/usr/app
+        networks:
+            - mongo
+        env_file:
+            - .env
+        restart: always
+
+networks:
+    mongo:
+        driver: bridge
