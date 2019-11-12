@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { mongo } from './Config/db';
+import db from './Config/db';
 
 import routes from './routes';
 
@@ -11,7 +11,7 @@ class App {
     this.middlewares();
     this.routes();
 
-    mongo();
+    db.mongo();
   }
 
   middlewares() {

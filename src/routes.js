@@ -13,7 +13,7 @@ routes.get('/test', (req, res) => {
 routes.get('/idea/:id', IdeaController.index);
 routes.get('/idea', IdeaController.list);
 routes.post('/idea', IdeaController.store);
-routes.put('/idea/:id', IdeaController.update);
+routes.put('/idea', IdeaController.update);
 routes.delete('/idea/:id', IdeaController.delete);
 
 export default routes;
