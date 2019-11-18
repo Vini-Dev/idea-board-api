@@ -26,9 +26,15 @@ class IdeaController {
         error: TranslateErrorsHelper.translate(validate.error),
       });
 
+    // Seleciona todas as notas para definir o z-index
+    const allNotes = await Idea.find({}).select('_id');
+
     // Cria o registro no banco
     const response = await Idea.create({
       ...req.body,
+      zindex: allNotes.length + 1,
+      left: 40,
+      top: 40,
       created_at: DateHelper.now(),
       updated_at: DateHelper.now(),
     });
@@ -110,48 +116,76 @@ class IdeaController {
   }
 
   async update(req, res) {
-    // Define os dados a serem recebidos e suas propriedades (tamanho, obrigatório...)
+    // Define os dados a serem recebidos e suas propriedades
     const schema = Joi.object({
-      id: Joi.string()
+      _id: Joi.string()
         .required()
         .length(24)
         .label('id'),
       title: Joi.string()
         .required()
-        .min(1)
+        .empty('')
         .label('titulo'),
       text: Joi.string()
         .required()
-        .min(1)
+        .empty('')
         .label('titulo'),
+      zindex: Joi.number()
+        .required()
+        .min(1)
+        .label('z-index'),
+      left: Joi.number()
+        .required()
+        .min(0)
+        .max(100)
+        .label('left'),
+      top: Joi.number()
+        .required()
+        .min(0)
+        .max(100)
+        .label('top'),
     });
 
-    const validate = schema.validate(req.body, { abortEarly: false });
+    const notes = req.body;
 
-    // Verifica se os dados recebidos estão ok
-    if (validate.error)
-      return res.status(403).json({
-        data: [],
-        error: TranslateErrorsHelper.translate(validate.error),
+    const data = [];
+    const error = [];
+
+    await notes.map(async note => {
+      const { _id, title, text, zindex, left, top } = note;
+
+      const validate = schema.validate(
+        { _id, title, text, zindex, left, top },
+        { abortEarly: false }
+      );
+
+      // Verifica se os dados recebidos estão ok
+      if (validate.error)
+        error.push(TranslateErrorsHelper.translate(validate.error));
+
+      const response = await Idea.updateOne(
+        { _id },
+        {
+          $set: {
+            title,
+            text,
+            zindex,
+            left,
+            top,
+            updated_at: DateHelper.now(),
+          },
+        }
+      ).catch(err => {
+        error.push(err);
+        return false;
       });
 
-    const { id, title, text } = req.body;
+      if (!response) data.push(response);
 
-    const params = {
-      title,
-      text,
-      updated_at: DateHelper.now(),
-    };
+      return response;
+    });
 
-    const response = await Idea.findOneAndUpdate(
-      { _id: id },
-      {
-        $set: { ...params },
-      },
-      { returnOriginal: false, useFindAndModify: false }
-    ).catch(err => err);
-
-    return res.status(200).json({ data: [response || []], error: [] });
+    return res.status(200).json({ data, error });
   }
 
   async delete(req, res) {
